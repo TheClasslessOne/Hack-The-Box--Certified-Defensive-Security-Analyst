@@ -1,6 +1,6 @@
-# Project Name
+# Hack The Box: Certified Defensive Security Analyst
 
-> One-line description.
+> Resources for success
 
 ## Table of Contents
 - [Overview](#overview)
