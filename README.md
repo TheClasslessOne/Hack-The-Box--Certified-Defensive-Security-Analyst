@@ -134,7 +134,7 @@
 
 ## Reporting & Automation
 
-- [SysReptor](https://sysreptor.com/)  
+- [SysReptor](https://labs.sysre.pt/projects/)  
   *Automated reporting platform for security professionals.*
 - [TheHive Project](https://thehive-project.org/)  
   *Case management and incident response platform.*
