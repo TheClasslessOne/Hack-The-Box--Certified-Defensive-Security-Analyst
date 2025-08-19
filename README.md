@@ -2,6 +2,12 @@
 
 > Resources for success
 
+<a href="https://theclasslessone.github.io/Hack-The-Box--Certified-Defensive-Security-Analyst/" target="_blank" style="font-size: 4em;">
+  Assembly Code Generator
+</a>
+
+
+
 ## Table of Contents
 - [Core Learning Paths](#core-learning-paths)
 - [Detection & Threat Intelligence](#detection--threat-intelligence)
