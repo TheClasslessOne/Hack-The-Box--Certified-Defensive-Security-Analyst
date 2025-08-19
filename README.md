@@ -3,7 +3,7 @@
 > Resources for success
 
 <a href="https://theclasslessone.github.io/Hack-The-Box--Certified-Defensive-Security-Analyst/" target="_blank" style="font-size: 4em;">
-  Assembly Code Generator
+  Assembly Code: Compilation Stages Tool
 </a>
 
 
