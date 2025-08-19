@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Compilation Stages Playground</title>
+  <style>
+    :root{
+      --bg:#0d1117; /* GitHub dark */
+      --panel:#161b22;
+      --muted:#8b949e;
+      --fg:#c9d1d9;
+      --accent:#58a6ff;
+      --border:#30363d;
+      --green:#3fb950;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:var(--bg); color:var(--fg);
+      font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;
+    }
+    header{padding:28px 20px 10px; max-width:1200px; margin:0 auto}
+    h1{margin:0 0 6px; font-size:28px}
+    p.sub{margin:0; color:var(--muted)}
+    .controls{
+      display:flex; gap:12px; flex-wrap:wrap; align-items:center; 
+      border-top:1px solid var(--border); margin-top:14px; padding-top:12px;
+    }
+    .controls label{color:var(--muted)}
+    .controls input[type="text"]{
+      background:var(--panel); color:var(--fg); border:1px solid var(--border);
+      padding:8px 10px; border-radius:8px; min-width:240px;
+    }
+    .btn{background:transparent; color:var(--fg); border:1px solid var(--border);
+      padding:8px 10px; border-radius:8px; cursor:pointer}
+    .btn:hover{border-color:var(--accent); color:var(--accent)}
+
+    .grid{max-width:1200px; margin:24px auto; padding:0 20px;
+      display:grid; grid-template-columns:repeat(5,1fr); gap:16px}
+    @media (max-width:1200px){.grid{grid-template-columns:repeat(2,1fr)}}
+    @media (max-width:640px){.grid{grid-template-columns:1fr}}
+
+    .card{background:var(--panel); border:1px solid var(--border); border-radius:12px;
+      overflow:hidden; display:flex; flex-direction:column; min-height:260px}
+    .card header{padding:10px 12px; display:flex; align-items:center; gap:8px}
+    .badge{font-size:12px; color:#111; background:var(--green); padding:2px 8px; border-radius:999px}
+    .title{font-weight:700; letter-spacing:.2px}
+    .subtle{color:var(--muted); font-size:12px}
+
+    pre{margin:0; padding:12px; overflow:auto; white-space:pre; tab-size:2}
+    code{display:block;}
+
+    .toolbar{display:flex; justify-content:space-between; align-items:center; padding:8px 12px; border-top:1px solid var(--border);}
+    .copy{font-size:12px}
+
+    footer{max-width:1200px; margin:12px auto 36px; padding:0 20px; color:var(--muted)}
+    .hint{font-size:12px}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Compilation Stages</h1>
+    <p class="sub">Interactive demo that mirrors the classic “Hello, World!” path → Python / C / Assembly / Hex bytes / Binary bytes.</p>
+    <div class="controls">
+      <label for="msg">Message</label>
+      <input id="msg" type="text" value="Hello World!" aria-label="Message to print" />
+      <button id="mkReadme" class="btn">Copy README (Markdown)</button>
+      <button id="reset" class="btn">Reset</button>
+    </div>
+  </header>
+
+  <section class="grid" id="grid">
+    <!-- Panels are populated by JS -->
+  </section>
+
+  <footer class="hint">
+    Notes: Hex and binary for <code>mov</code> immediates and <code>syscall</code> are accurate for Linux x86‑64. The address for <code>message</code> uses a placeholder relative LEA encoding (offset shown as <code>??</code>) because it depends on final layout. Educational demo—no external libraries, 100% client‑side and GitHub Pages friendly.
+  </footer>
+
+<script>
+(function(){
+  const state = { msg: 'Hello World!' };
+
+  const STAGES = [
+    { key:'python', label:'Interpreted Language', sub:'Python, JS, Bash' },
+    { key:'c', label:'High Level Language', sub:'C, C++' },
+    { key:'asm', label:'Low Level Language', sub:'Assembly (x86‑64, Linux)' },
+    { key:'hex', label:'Hex Machine Code' },
+    { key:'bin', label:'Binary Machine Code' },
+  ];
+
+  const grid = document.getElementById('grid');
+
+  function le32hex(n){
+    const b = new Uint8Array(new Uint32Array([n>>>0]).buffer);
+    return [...b].map(x=>x.toString(16).padStart(2,'0')).join(' ');
+  }
+  function hexToBinaryLines(hexLines){
+    const out=[];
+    for(const line of hexLines){
+      const bytes=line.trim().split(/\s+/).filter(x=>x && x!=='..' && x!=='??');
+      const bin=bytes.map(h=>parseInt(h,16).toString(2).padStart(8,'0')).join(' ');
+      out.push(bin||'');
+    }
+    return out;
+  }
+
+  function codePython(msg){
+    return `print(${JSON.stringify(msg)})`;
+  }
+  function codeC(msg){
+    return `#include <unistd.h>\nconst char message[] = ${JSON.stringify(msg)};\nint main(){\n  write(1, message, sizeof(message)-1);\n  _exit(0);\n}`;
+  }
+  function codeAsm(msg){
+    const len = new TextEncoder().encode(msg).length;
+    return `; Linux x86-64\nsection .data\n  message db ${JSON.stringify(msg)}\n\nsection .text\n  global _start\n_start:\n  mov rax, 1              ; sys_write\n  mov rdi, 1              ; fd = 1 (stdout)\n  lea rsi, [rel message]  ; buffer address\n  mov rdx, ${len.toString().padStart(2,' ')}          ; length\n  syscall\n\n  mov rax, 60             ; sys_exit\n  mov rdi, 0              ; status = 0\n  syscall`;
+  }
+  function codeHex(msg){
+    const len = new TextEncoder().encode(msg).length;
+    const lenLE = le32hex(len);
+    return [
+      '48 c7 c0 01 00 00 00', // mov rax,1
+      '48 c7 c7 01 00 00 00', // mov rdi,1
+      '48 8d 35 ?? ?? ?? ??', // lea rsi, [rel message] (offset unknown at this stage)
+      `48 c7 c2 ${lenLE}`,   // mov rdx, len
+      '0f 05',               // syscall
+      '',
+      '48 c7 c0 3c 00 00 00', // mov rax,60
+      '48 c7 c7 00 00 00 00', // mov rdi,0
+      '0f 05'                 // syscall
+    ];
+  }
+
+  function render(){
+    grid.innerHTML='';
+    const msg = state.msg;
+    const py  = codePython(msg);
+    const c   = codeC(msg);
+    const asm = codeAsm(msg);
+    const hexLines = codeHex(msg);
+    const binLines = hexToBinaryLines(hexLines);
+
+    const blocks = {
+      python: py,
+      c: c,
+      asm: asm,
+      hex: hexLines.join('\n'),
+      bin: binLines.join('\n')
+    };
+
+    for(const s of STAGES){
+      const card = document.createElement('div');
+      card.className='card';
+
+      const h = document.createElement('header');
+      const b = document.createElement('span');
+      b.className='badge'; b.textContent = s.label.includes('Interpreted')? '▶' : s.label.includes('Hex')? '0x' : s.label.includes('Binary')? '0b' : '{ }';
+      const t = document.createElement('div');
+      t.innerHTML = `<div class="title">${s.label}</div><div class="subtle">${s.sub||''}</div>`;
+      h.appendChild(b); h.appendChild(t);
+
+      const pre = document.createElement('pre');
+      const code = document.createElement('code');
+      code.id = 'code_'+s.key;
+      code.textContent = blocks[s.key];
+      pre.appendChild(code);
+
+      const bar = document.createElement('div');
+      bar.className='toolbar';
+      const left = document.createElement('div'); left.className='subtle'; left.textContent = s.key.toUpperCase();
+      const btn = document.createElement('button'); btn.className='btn copy'; btn.textContent='Copy';
+      btn.addEventListener('click',()=>{
+        navigator.clipboard.writeText(code.textContent);
+        btn.textContent='Copied!'; setTimeout(()=>btn.textContent='Copy',900);
+      });
+      bar.appendChild(left); bar.appendChild(btn);
+
+      card.appendChild(h); card.appendChild(pre); card.appendChild(bar);
+      grid.appendChild(card);
+    }
+  }
+
+  // README generator (Markdown table + fenced blocks)
+  function buildREADME(){
+    const msg = state.msg;
+    const py  = codePython(msg);
+    const c   = codeC(msg);
+    const asm = codeAsm(msg);
+    const hexLines = codeHex(msg).join('\n');
+    const binLines = hexToBinaryLines(codeHex(msg)).join('\n');
+
+    return `# Compilation Stages\n\n> Message: ${JSON.stringify(msg)}\n\n| Stage | Snippet |\n|---|---|\n| Interpreted (Python) |\\\n\n\`\`\`python\n${py}\n\`\`\` |\n| High Level (C) |\\\n\n\`\`\`c\n${c}\n\`\`\` |\n| Low Level (Assembly, x86-64 Linux) |\\\n\n\`\`\`asm\n${asm}\n\`\`\` |\n| Hex Machine Code |\\\n\n\`\`\`text\n${hexLines}\n\`\`\` |\n| Binary Machine Code |\\\n\n\`\`\`text\n${binLines}\n\`\`\` |\n\n*Generated by the Compilation Stages Playground (no external deps).*`;
+  }
+
+  // wiring
+  const msgInput = document.getElementById('msg');
+  msgInput.addEventListener('input', e=>{ state.msg = e.target.value; render(); });
+  document.getElementById('reset').addEventListener('click', ()=>{ msgInput.value='Hello World!'; state.msg='Hello World!'; render(); });
+  document.getElementById('mkReadme').addEventListener('click', ()=>{
+    const md = buildREADME();
+    navigator.clipboard.writeText(md);
+    const btn = document.getElementById('mkReadme');
+    btn.textContent='Copied README!'; setTimeout(()=>btn.textContent='Copy README (Markdown)',1100);
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
