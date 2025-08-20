@@ -7,7 +7,7 @@
 - [Assembly Code: Compilation Stages Tool](https://theclasslessone.github.io/Hack-The-Box--Certified-Defensive-Security-Analyst/)
 - [Hex Decoder](https://www.convertstring.com/EncodeDecode/HexDecode)
 - [Chisel - A fast TCP/UDP tunnel over HTTP](https://github.com/jpillora/chisel)
-
+- [Reverse Shell Cheat Sheet](https://swisskyrepo.github.io/InternalAllTheThings/cheatsheets/shell-reverse-cheatsheet/#tools)
 
 
 ## Table of Contents
