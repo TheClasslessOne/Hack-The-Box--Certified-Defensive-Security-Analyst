@@ -2,9 +2,11 @@
 
 > Resources for success
 
-<a href="https://theclasslessone.github.io/Hack-The-Box--Certified-Defensive-Security-Analyst/" target="_blank" style="font-size: 4em;">
-  Assembly Code: Compilation Stages Tool
-</a>
+## 🔧 Tools
+
+- [Assembly Code: Compilation Stages Tool](https://theclasslessone.github.io/Hack-The-Box--Certified-Defensive-Security-Analyst/)
+- [Hex Decoder](https://www.convertstring.com/EncodeDecode/HexDecode)
+
 
 
 
