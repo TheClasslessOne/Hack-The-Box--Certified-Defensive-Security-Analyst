@@ -98,6 +98,80 @@ Tcpdump is lightweight and fast — perfect for quick captures, filtering, and c
 | Example | Description |
 - **Detect SYN flood:** `tcpdump -nni eth0 'tcp[tcpflags] & tcp-syn != 0'`
 
+# 🕵️ Tcpdump Review Filters (PCAP Analysis Cheat Sheet)
+
+## 🔌 Ports & Services
+| Task | Filter | Example |
+|------|--------|---------|
+| Show traffic on a single port | `port <p>` | `tcpdump port 80` |
+| Show TCP traffic to/from a port | `tcp dst port <p>` / `tcp src port <p>` | `tcpdump tcp dst port 443` |
+| Show UDP traffic to/from a port | `udp dst port <p>` / `udp src port <p>` | `tcpdump udp src port 53` |
+| Show range of ports | `portrange <p1>-<p2>` | `tcpdump portrange 1024-65535` |
+
+---
+
+## 📡 Protocols
+| Task | Filter | Example |
+|------|--------|---------|
+| Only TCP | `tcp` | `tcpdump tcp` |
+| Only UDP | `udp` | `tcpdump udp` |
+| Only ICMP | `icmp` | `tcpdump icmp` |
+| Match protocol by number | `ip proto <num>` | `tcpdump ip proto 6` (TCP), `tcpdump ip proto 17` (UDP) |
+
+---
+
+## 🖥️ Hosts & Networks
+| Task | Filter | Example |
+|------|--------|---------|
+| Traffic from/to single host | `host <ip>` | `tcpdump host 10.0.0.5` |
+| Only source/destination host | `src host <ip>` / `dst host <ip>` | `tcpdump src host 192.168.1.10` |
+| Subnet traffic | `net <subnet>/<mask>` | `tcpdump net 192.168.1.0/24` |
+| Gateway traffic | `gateway host <ip>` | `tcpdump gateway host 192.168.1.1` |
+
+---
+
+## 📦 Packet Characteristics
+| Task | Filter | Example |
+|------|--------|---------|
+| Small packets (scans, pings) | `less <len>` | `tcpdump less 64` |
+| Large packets (jumbo frames) | `greater <len>` | `tcpdump greater 1500` |
+| Capture only SYN packets | `'tcp[tcpflags] & tcp-syn != 0'` | `tcpdump 'tcp[tcpflags] & tcp-syn != 0'` |
+| Capture only RST packets | `'tcp[tcpflags] & tcp-rst != 0'` | `tcpdump 'tcp[tcpflags] & tcp-rst != 0'` |
+
+---
+
+## 📢 Broadcasts, Multicasts, VLANs
+| Task | Filter | Example |
+|------|--------|---------|
+| Broadcast packets | `(ether|ip) broadcast` | `tcpdump ether broadcast` |
+| Multicast packets | `(ether|ip|ip6) multicast` | `tcpdump ip multicast` |
+| VLAN-tagged traffic | `vlan [id]` | `tcpdump vlan 100` |
+| MPLS traffic | `mpls [label]` | `tcpdump mpls 200` |
+
+---
+
+## 🧹 Noise Reduction
+| Task | Filter | Example |
+|------|--------|---------|
+| Ignore DNS chatter | `not port 53` | `tcpdump tcp and not port 53` |
+| Ignore ARP packets | `not arp` | `tcpdump not arp` |
+| Ignore local subnet traffic | `not net <subnet>` | `tcpdump not net 192.168.1.0/24` |
+
+---
+
+## 🔀 Combining Filters
+- **AND** → both must match  
+  `tcpdump tcp and port 443`
+- **OR** → either can match  
+  `tcpdump port 80 or port 443`
+- **NOT** → exclude traffic  
+  `tcpdump tcp and not port 22`
+
+### Example:  
+```bash
+tcpdump tcp and port 443 and not src net 192.168.0.0/16
+
+
 ---
 
 ## 🔹 TShark (CLI Wireshark)
@@ -236,5 +310,6 @@ Wireshark is a **graphical packet analyzer** with deep inspection, stream reasse
 ---
 
 👉 This upgraded sheet keeps **all original content**, but adds **switches, filters, examples, and workflows** — organized so you can move seamlessly from **capture → filter → analyze**.
+
 
 
