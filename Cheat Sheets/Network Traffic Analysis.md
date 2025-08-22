@@ -36,23 +36,44 @@ Tcpdump is lightweight and fast — perfect for quick captures, filtering, and c
 | `-Z <user>` | Drop privileges to user | `tcpdump -Z nobody -i eth0` |
 
 
-### 🔍 Capture Filter Primitives
-| Filter | Description | Example |
-|--------|-------------|---------|
-| `[src|dst] host <host>` | Match source/destination host | `tcpdump src host 10.0.0.1` |
-| `ether [src|dst] host <ehost>` | Match Ethernet host | `tcpdump ether src host 00:11:22:33:44:55` |
-| `gateway host <host>` | Match packets using host as gateway | `tcpdump gateway host 192.168.1.1` |
-| `[src|dst] net <network>/<len>` | Match subnet | `tcpdump net 192.168.1.0/24` |
-| `[tcp|udp] [src|dst] port <port>` | Match TCP/UDP port | `tcpdump tcp dst port 80` |
-| `[tcp|udp] portrange <p1>-<p2>` | Match TCP/UDP port range | `tcpdump udp portrange 5000-6000` |
-| `less <length>` | Packets ≤ length | `tcpdump less 64` |
-| `greater <length>` | Packets ≥ length | `tcpdump greater 1500` |
-| `(ether|ip|ip6) proto <protocol>` | Match protocol | `tcpdump ip proto 6` |
-| `(ether|ip) broadcast` | Match broadcasts | `tcpdump ether broadcast` |
-| `(ether|ip|ip6) multicast` | Match multicasts | `tcpdump ip multicast` |
-| `type (mgt|ctl|data)` | Match 802.11 frame type | `tcpdump type ctl` |
-| `vlan [<id>]` | Match VLAN traffic | `tcpdump vlan 100` |
-| `mpls [<label>]` | Match MPLS | `tcpdump mpls 200` |
+## 🔍 Tcpdump Capture Filter Primitives (Cheat Sheet)
+
+### 🎯 Host & Network
+| Filter | Purpose | Example | When to Use |
+|--------|---------|---------|-------------|
+| `src host <ip>` / `dst host <ip>` | Match packets from/to an IP | `tcpdump src host 10.0.0.1` | Narrow down to traffic from a single machine |
+| `ether src host <mac>` / `ether dst host <mac>` | Match packets from/to a MAC | `tcpdump ether src host 00:11:22:33:44:55` | Useful when devices share IPs (DHCP, ARP issues) |
+| `gateway host <ip>` | Match traffic going through a gateway | `tcpdump gateway host 192.168.1.1` | Check routing or gateway bottlenecks |
+| `net <network>/<mask>` | Match subnet traffic | `tcpdump net 192.168.1.0/24` | Capture everything inside a subnet |
+
+---
+
+### 🔌 Ports
+| Filter | Purpose | Example | When to Use |
+|--------|---------|---------|-------------|
+| `tcp src port <p>` / `udp dst port <p>` | Match specific TCP/UDP port | `tcpdump tcp dst port 80` | Troubleshoot web traffic, DNS queries, etc. |
+| `tcp portrange <p1>-<p2>` / `udp portrange <p1>-<p2>` | Match range of ports | `tcpdump udp portrange 5000-6000` | Capture ephemeral ports or service ranges |
+
+---
+
+### 📦 Packet Size
+| Filter | Purpose | Example | When to Use |
+|--------|---------|---------|-------------|
+| `less <len>` | Capture packets ≤ length | `tcpdump less 64` | Spot small packets (pings, SYNs, scans) |
+| `greater <len>` | Capture packets ≥ length | `tcpdump greater 1500` | Find jumbo frames or oversized packets |
+
+---
+
+### 📡 Protocols & Types
+| Filter | Purpose | Example | When to Use |
+|--------|---------|---------|-------------|
+| `(ether|ip|ip6) proto <num>` | Match by protocol number | `tcpdump ip proto 6` (TCP) | Debug specific protocols (e.g., ICMP = 1, TCP = 6, UDP = 17) |
+| `(ether|ip) broadcast` | Match broadcasts | `tcpdump ether broadcast` | Diagnose ARP storms, DHCP discover, broadcast noise |
+| `(ether|ip|ip6) multicast` | Match multicasts | `tcpdump ip multicast` | Check multicast routing or streaming apps |
+| `type (mgt|ctl|data)` | Match 802.11 Wi-Fi frame type | `tcpdump type ctl` | Wi-Fi troubleshooting at frame-level |
+| `vlan [id]` | Capture VLAN-tagged traffic | `tcpdump vlan 100` | Verify VLAN tagging/trunk links |
+| `mpls [label]` | Capture MPLS traffic | `tcpdump mpls 200` | MPLS-specific debugging in WAN environments |
+
 
 
 ### 🔗 Protocols
@@ -215,4 +236,5 @@ Wireshark is a **graphical packet analyzer** with deep inspection, stream reasse
 ---
 
 👉 This upgraded sheet keeps **all original content**, but adds **switches, filters, examples, and workflows** — organized so you can move seamlessly from **capture → filter → analyze**.
+
 
