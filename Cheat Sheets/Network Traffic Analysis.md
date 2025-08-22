@@ -5,8 +5,8 @@
 
 
 ## 🔹 Tcpdump (CLI Packet Capture)
+Tcpdump is lightweight and fast — perfect for quick captures, filtering, and creating `.pcap` files for deeper analysis in Wireshark.
 
-Tcpdump is lightweight and fast — perfect for quick captures, filtering, and creating `.pcap` files for deeper analysis in Wireshark. Use `-nn` to avoid DNS/port lookups and speed things up.
 
 ### 🔧 Command Line Options
 | Option | Description | Example |
@@ -14,146 +14,278 @@ Tcpdump is lightweight and fast — perfect for quick captures, filtering, and c
 | `-A` | Print frame payload in ASCII | `tcpdump -A -i eth0` |
 | `-c <count>` | Exit after capturing count packets | `tcpdump -c 50 -i eth0` |
 | `-D` | List available interfaces | `tcpdump -D` |
-| `-e` | Print link-layer (e.g., MAC) headers | `tcpdump -e -i eth0` |
+| `-e` | Print link-level headers | `tcpdump -e -i eth0` |
 | `-F <file>` | Use file as filter expression | `tcpdump -F filter.txt` |
-| `-G <n>` | Rotate dump every n seconds | `tcpdump -G 60 -w 'cap-%Y-%m-%d_%H-%M-%S.pcap'` |
+| `-G <n>` | Rotate dump file every n seconds | `tcpdump -G 60 -w capture-%Y-%m-%d_%H-%M-%S.pcap` |
 | `-i <iface>` | Capture on interface | `tcpdump -i eth0` |
 | `-K` | Don’t verify TCP checksums | `tcpdump -K -i eth0` |
-| `-L` | List data link types for interface | `tcpdump -i eth0 -L` |
-| `-n` / `-nn` | Don’t resolve names / names + ports | `tcpdump -nn -i eth0` |
-| `-p` | Don’t enable promiscuous mode | `tcpdump -p -i eth0` |
-| `-q` | Quick (less verbose) output | `tcpdump -q -i eth0` |
+| `-L` | List data link types for the interface | `tcpdump -i eth0 -L` |
+| `-n` | Don’t resolve hostnames | `tcpdump -n -i eth0` |
+| `-nn` | Don’t resolve hostnames or ports | `tcpdump -nn -i eth0` |
+| `-p` | Don’t capture in promiscuous mode | `tcpdump -p -i eth0` |
+| `-q` | Quick output (less detail) | `tcpdump -q -i eth0` |
 | `-r <file>` | Read from file | `tcpdump -r test.pcap` |
-| `-s <len>` | Snaplen (0 = full packet) | `tcpdump -s 0 -i eth0` |
-| `-S` | Absolute TCP sequence numbers | `tcpdump -S -i eth0` |
+| `-s <len>` | Capture up to len bytes | `tcpdump -s 0 -i eth0` |
+| `-S` | Show absolute TCP sequence numbers | `tcpdump -S -i eth0` |
 | `-t` | Don’t print timestamps | `tcpdump -t -i eth0` |
-| `-v/-vv/-vvv` | Increase verbosity | `tcpdump -vvv -i eth0` |
-| `-w <file>` | Write to file | `tcpdump -w out.pcap -i eth0` |
-| `-x` / `-X` | Hex / Hex+ASCII payload | `tcpdump -X -i eth0` |
-| `-y <type>` | Data link type | `tcpdump -y EN10MB -i eth0` |
-| `-Z <user>` | Drop privs to user | `tcpdump -Z nobody -i eth0` |
+| `-v, -vv, -vvv` | Increase verbosity | `tcpdump -vvv -i eth0` |
+| `-w <file>` | Write packets to file | `tcpdump -w out.pcap -i eth0` |
+| `-x` | Print payload in hex | `tcpdump -x -i eth0` |
+| `-X` | Print payload in hex + ASCII | `tcpdump -X -i eth0` |
+| `-y <type>` | Specify data link type | `tcpdump -y EN10MB -i eth0` |
+| `-Z <user>` | Drop privileges to user | `tcpdump -Z nobody -i eth0` |
 
----
 
 ## 🔍 Tcpdump Capture Filter Primitives (Cheat Sheet)
-
-> Tip: Quote complex filters to avoid shell interpretation, e.g., `tcpdump -nn "tcp and port 443 and not net 10.0.0.0/8"`.
 
 ### 🎯 Host & Network
 | Filter | Purpose | Example | When to Use |
 |--------|---------|---------|-------------|
-| `src host <ip>` / `dst host <ip>` | Match packets from/to an IP | `tcpdump src host 10.0.0.1` | Zoom in on one talker |
-| `ether src host <mac>` / `ether dst host <mac>` | Match by MAC | `tcpdump ether src host 00:11:22:33:44:55` | Layer‑2 issues; IP churn/DHCP |
-| `gateway host <ip>` | Packets routed via a gateway | `tcpdump gateway host 192.168.1.1` | Routing/bottleneck checks |
-| `net <cidr>` | Subnet traffic | `tcpdump net 192.168.1.0/24` | Capture a whole segment |
+| `src host <ip>` / `dst host <ip>` | Match packets from/to an IP | `tcpdump src host 10.0.0.1` | Narrow down to traffic from a single machine |
+| `ether src host <mac>` / `ether dst host <mac>` | Match packets from/to a MAC | `tcpdump ether src host 00:11:22:33:44:55` | Useful when devices share IPs (DHCP, ARP issues) |
+| `gateway host <ip>` | Match traffic going through a gateway | `tcpdump gateway host 192.168.1.1` | Check routing or gateway bottlenecks |
+| `net <network>/<mask>` | Match subnet traffic | `tcpdump net 192.168.1.0/24` | Capture everything inside a subnet |
+
+---
 
 ### 🔌 Ports
 | Filter | Purpose | Example | When to Use |
 |--------|---------|---------|-------------|
-| `port <p>` / `src|dst port <p>` | Single port / direction | `tcpdump tcp dst port 443` | Focus on one service |
-| `portrange <p1>-<p2>` | Range of ports | `tcpdump udp portrange 5000-6000` | Ephemeral/service ranges |
+| `tcp src port <p>` / `udp dst port <p>` | Match specific TCP/UDP port | `tcpdump tcp dst port 80` | Troubleshoot web traffic, DNS queries, etc. |
+| `tcp portrange <p1>-<p2>` / `udp portrange <p1>-<p2>` | Match range of ports | `tcpdump udp portrange 5000-6000` | Capture ephemeral ports or service ranges |
+
+---
 
 ### 📦 Packet Size
 | Filter | Purpose | Example | When to Use |
 |--------|---------|---------|-------------|
-| `less <len>` | Packets ≤ length | `tcpdump less 64` | Pings, SYNs, scans |
-| `greater <len>` | Packets ≥ length | `tcpdump greater 1500` | Jumbo/fragment issues |
+| `less <len>` | Capture packets ≤ length | `tcpdump less 64` | Spot small packets (pings, SYNs, scans) |
+| `greater <len>` | Capture packets ≥ length | `tcpdump greater 1500` | Find jumbo frames or oversized packets |
+
+---
 
 ### 📡 Protocols & Types
 | Filter | Purpose | Example | When to Use |
 |--------|---------|---------|-------------|
-| `(ether|ip|ip6) proto <num>` | Protocol by number | `tcpdump ip proto 6` | TCP=6, UDP=17, ICMP=1 |
-| `(ether|ip) broadcast` | Broadcasts | `tcpdump ether broadcast` | ARP storms, DHCP discover |
-| `(ether|ip|ip6) multicast` | Multicasts | `tcpdump ip multicast` | mDNS, streaming, routing |
-| `type (mgt|ctl|data)` | 802.11 Wi‑Fi frame type | `tcpdump type ctl` | Wi‑Fi L2 troubleshooting |
-| `vlan [id]` | VLAN‑tagged traffic | `tcpdump vlan 100` | Verify trunk/tagging |
-| `mpls [label]` | MPLS traffic | `tcpdump mpls 200` | WAN/MPLS analysis |
+| `(ether|ip|ip6) proto <num>` | Match by protocol number | `tcpdump ip proto 6` (TCP) | Debug specific protocols (e.g., ICMP = 1, TCP = 6, UDP = 17) |
+| `(ether|ip) broadcast` | Match broadcasts | `tcpdump ether broadcast` | Diagnose ARP storms, DHCP discover, broadcast noise |
+| `(ether|ip|ip6) multicast` | Match multicasts | `tcpdump ip multicast` | Check multicast routing or streaming apps |
+| `type (mgt|ctl|data)` | Match 802.11 Wi-Fi frame type | `tcpdump type ctl` | Wi-Fi troubleshooting at frame-level |
+| `vlan [id]` | Capture VLAN-tagged traffic | `tcpdump vlan 100` | Verify VLAN tagging/trunk links |
+| `mpls [label]` | Capture MPLS traffic | `tcpdump mpls 200` | MPLS-specific debugging in WAN environments |
 
-### 🔗 Built‑in Protocol Names
-`arp, ether, fddi, icmp, ip, ip6, link, ppp, radio, rarp, slip, tcp, tr, udp, wlan`
 
-### 🚩 TCP Flags (displayed via expressions)
-| Task | Filter Expression | Example |
-|------|-------------------|---------|
-| SYNs only | `tcp[tcpflags] & tcp-syn != 0` | `tcpdump -nn "tcp[tcpflags] & tcp-syn != 0"` |
-| RSTs only | `tcp[tcpflags] & tcp-rst != 0` | `tcpdump -nn "tcp[tcpflags] & tcp-rst != 0"` |
-| ACKs only | `tcp[tcpflags] & tcp-ack != 0` | `tcpdump -nn "tcp[tcpflags] & tcp-ack != 0"` |
 
-### ➕ Logical Operators
-- `and` • `or` • `not`  
-- `!` is also supported, but avoid it unquoted (your shell may interpret it).
+### 🔗 Protocols
+- `arp, ether, fddi, icmp, ip, ip6, link, ppp, radio, rarp, slip, tcp, tr, udp, wlan`
+
+
+### 🚩 TCP Flags
+- `tcp-urg, tcp-ack, tcp-psh, tcp-rst, tcp-syn, tcp-fin`
+
+
+### 🌐 ICMP Types
+- `icmp-echoreply, icmp-unreach, icmp-sourcequench, icmp-redirect, icmp-echo, icmp-routeradvert, icmp-routersolicit, icmp-timxceed, icmp-paramprob, icmp-tstamp, icmp-tstampreply, icmp-ireq, icmp-ireqreply, icmp-maskreq, icmp-maskreply`
+
+
+### ➕ Modifiers
+- `! or not` → Negation
+- `&& or and` → Logical AND
+- `|| or or` → Logical OR
+
 
 ### 💡 Example Filters
 | Example | Description |
-|--------|-------------|
-| `tcpdump -nn "tcp and port 443 and not net 192.168.0.0/16"` | External HTTPS only (ignore internal) |
-| `tcpdump -nn "udp and (port 53 or port 123)"` | DNS + NTP overview |
-| `tcpdump -nn "icmp or icmp6"` | Connectivity and error checks |
-| `tcpdump -nn "vlan 100 and not arp"` | VLAN 100, minus ARP noise |
-| `tcpdump -nn "tcp[tcpflags] & tcp-syn != 0 and dst port 80"` | HTTP connection attempts (SYNs) |
+- **Detect SYN flood:** `tcpdump -nni eth0 'tcp[tcpflags] & tcp-syn != 0'`
+
+# 🕵️ Tcpdump Review Filters (PCAP Analysis Cheat Sheet)
+
+## 🔌 Ports & Services
+| Task | Filter | Example |
+|------|--------|---------|
+| Show traffic on a single port | `port <p>` | `tcpdump port 80` |
+| Show TCP traffic to/from a port | `tcp dst port <p>` / `tcp src port <p>` | `tcpdump tcp dst port 443` |
+| Show UDP traffic to/from a port | `udp dst port <p>` / `udp src port <p>` | `tcpdump udp src port 53` |
+| Show range of ports | `portrange <p1>-<p2>` | `tcpdump portrange 1024-65535` |
 
 ---
 
-## 🕵️ Tcpdump Review Filters (PCAP Analysis Cheat Sheet)
-
-Use these during triage to narrow the dataset fast.
-
-### 🔌 Ports & Services
+## 📡 Protocols
 | Task | Filter | Example |
 |------|--------|---------|
-| Single service | `port <p>` | `tcpdump port 80` |
-| TCP to/from a port | `tcp src|dst port <p>` | `tcpdump tcp dst port 443` |
-| UDP to/from a port | `udp src|dst port <p>` | `tcpdump udp src port 53` |
-| Port range | `portrange <p1>-<p2>` | `tcpdump portrange 1024-65535` |
+| Only TCP | `tcp` | `tcpdump tcp` |
+| Only UDP | `udp` | `tcpdump udp` |
+| Only ICMP | `icmp` | `tcpdump icmp` |
+| Match protocol by number | `ip proto <num>` | `tcpdump ip proto 6` (TCP), `tcpdump ip proto 17` (UDP) |
 
-### 📡 Protocols
+---
+
+## 🖥️ Hosts & Networks
 | Task | Filter | Example |
 |------|--------|---------|
-| TCP only | `tcp` | `tcpdump tcp` |
-| UDP only | `udp` | `tcpdump udp` |
-| ICMP only | `icmp` | `tcpdump icmp` |
-| By number | `ip proto <num>` | `tcpdump ip proto 17` |
+| Traffic from/to single host | `host <ip>` | `tcpdump host 10.0.0.5` |
+| Only source/destination host | `src host <ip>` / `dst host <ip>` | `tcpdump src host 192.168.1.10` |
+| Subnet traffic | `net <subnet>/<mask>` | `tcpdump net 192.168.1.0/24` |
+| Gateway traffic | `gateway host <ip>` | `tcpdump gateway host 192.168.1.1` |
 
-### 🖥️ Hosts & Networks
+---
+
+## 📦 Packet Characteristics
 | Task | Filter | Example |
 |------|--------|---------|
-| Single host | `host <ip>` | `tcpdump host 10.0.0.5` |
-| Source/Destination host | `src host <ip>` / `dst host <ip>` | `tcpdump src host 192.168.1.10` |
-| Subnet | `net <cidr>` | `tcpdump net 192.168.1.0/24` |
-| Gateway path | `gateway host <ip>` | `tcpdump gateway host 192.168.1.1` |
+| Small packets (scans, pings) | `less <len>` | `tcpdump less 64` |
+| Large packets (jumbo frames) | `greater <len>` | `tcpdump greater 1500` |
+| Capture only SYN packets | `'tcp[tcpflags] & tcp-syn != 0'` | `tcpdump 'tcp[tcpflags] & tcp-syn != 0'` |
+| Capture only RST packets | `'tcp[tcpflags] & tcp-rst != 0'` | `tcpdump 'tcp[tcpflags] & tcp-rst != 0'` |
 
-### 📦 Packet Characteristics
+---
+
+## 📢 Broadcasts, Multicasts, VLANs
 | Task | Filter | Example |
 |------|--------|---------|
-| Small packets | `less <len>` | `tcpdump less 64` |
-| Large packets | `greater <len>` | `tcpdump greater 1500` |
-| SYNs only | `tcp[tcpflags] & tcp-syn != 0` | `tcpdump -nn "tcp[tcpflags] & tcp-syn != 0"` |
-| RSTs only | `tcp[tcpflags] & tcp-rst != 0` | `tcpdump -nn "tcp[tcpflags] & tcp-rst != 0"` |
+| Broadcast packets | `(ether|ip) broadcast` | `tcpdump ether broadcast` |
+| Multicast packets | `(ether|ip|ip6) multicast` | `tcpdump ip multicast` |
+| VLAN-tagged traffic | `vlan [id]` | `tcpdump vlan 100` |
+| MPLS traffic | `mpls [label]` | `tcpdump mpls 200` |
 
-### 📢 Broadcasts, Multicasts, VLAN/MPLS
+---
+
+## 🧹 Noise Reduction
 | Task | Filter | Example |
 |------|--------|---------|
-| Broadcasts | `(ether|ip) broadcast` | `tcpdump ether broadcast` |
-| Multicasts | `(ether|ip|ip6) multicast` | `tcpdump ip multicast` |
-| VLAN‑tagged | `vlan [id]` | `tcpdump vlan 100` |
-| MPLS | `mpls [label]` | `tcpdump mpls 200` |
+| Ignore DNS chatter | `not port 53` | `tcpdump tcp and not port 53` |
+| Ignore ARP packets | `not arp` | `tcpdump not arp` |
+| Ignore local subnet traffic | `not net <subnet>` | `tcpdump not net 192.168.1.0/24` |
 
-### 🧹 Noise Reduction
-| Goal | Filter | Example |
-|-----|--------|---------|
-| Remove DNS | `not port 53` | `tcpdump tcp and not port 53` |
-| Remove ARP | `not arp` | `tcpdump not arp` |
-| Ignore local subnet | `not net <cidr>` | `tcpdump not net 192.168.1.0/24` |
+---
 
-### 🔀 Combining Filters
-- **AND** → both must match: `tcpdump tcp and port 443`  
-- **OR** → either can match: `tcpdump port 80 or port 443`  
-- **NOT** → exclude traffic: `tcpdump tcp and not port 22`
+## 🔀 Combining Filters
+- **AND** → both must match  
+  `tcpdump tcp and port 443`
+- **OR** → either can match  
+  `tcpdump port 80 or port 443`
+- **NOT** → exclude traffic  
+  `tcpdump tcp and not port 22`
 
-**Example**
+### Example:  
 ```bash
-tcpdump -nn "tcp and port 443 and not src net 192.168.0.0/16"
+tcpdump tcp and port 443 and not src net 192.168.0.0/16
+
+
+---
+
+
+
+### 🗂 Organizing and Summarizing Tcpdump Output
+
+Tcpdump prints raw packets, but piping it into Unix tools (`awk`, `cut`, `sort`, `uniq`, `wc`, etc.) makes it far more useful.  
+These strategies help you turn raw packets into **actionable summaries**.
+
+1. **Show only source IPs (ranked)**
+```bash
+tcpdump -nn -i eth0 | awk '{print $3}' | cut -d. -f1-4 | sort | uniq -c | sort -nr
 ```
+
+2. **Show only destination IPs (ranked)**
+```bash
+tcpdump -nn -i eth0 | awk '{print $5}' | cut -d. -f1-4 | sort | uniq -c | sort -nr
+```
+
+3. **Top talkers (src → dst pairs ranked)**
+```bash
+tcpdump -nn -i eth0 | awk '{print $3,$5}' | cut -d. -f1-4,5-8 | sort | uniq -c | sort -nr
+```
+
+4. **Count packets by protocol token**
+```bash
+tcpdump -nn -i eth0 | awk '{print $2}' | sort | uniq -c | sort -nr
+```
+
+5. **Count packets by port**
+```bash
+tcpdump -nn -i eth0 | awk -F '.' '{print $NF}' | sort | uniq -c | sort -nr
+```
+
+6. **Only TCP / UDP / ICMP traffic**
+```bash
+tcpdump -nn tcp -i eth0
+tcpdump -nn udp -i eth0
+tcpdump -nn icmp -i eth0
+```
+
+7. **Rank packet sizes**
+```bash
+tcpdump -nn -i eth0 | awk '{print $NF}' | sort -n | uniq -c | sort -nr
+```
+
+8. **Summarize conversations (src,dst pairs)**
+```bash
+tcpdump -nn -i eth0 | awk '{print $3,$5}' | cut -d. -f1-4,5-8 | sort | uniq -c | sort -nr | head
+```
+
+9. **SYN packets only (scans/attempts)**
+```bash
+tcpdump -nn 'tcp[tcpflags] & tcp-syn != 0'
+```
+
+10. **RST packets only (failures/drops)**
+```bash
+tcpdump -nn 'tcp[tcpflags] & tcp-rst != 0'
+```
+
+11. **Quick snapshot (first 100 pkts)**
+```bash
+tcpdump -nn -i eth0 -c 100
+```
+
+12. **Save to file for offline analysis**
+```bash
+tcpdump -nn -i eth0 -w capture.pcap
+```
+
+13. **Top protocols by packet count**
+```bash
+tcpdump -nn -i eth0 | awk '{print $2}' | cut -d',' -f1 | sort | uniq -c | sort -nr | head
+```
+
+14. **External vs internal traffic**
+```bash
+tcpdump -nn -i eth0 | awk '{print $3,$5}' | egrep -v '(^| )10\.|(^| )172\.(1[6-9]|2[0-9]|3[0-1])\.|(^| )192\.168\.' | sort | uniq -c | sort -nr
+```
+
+15. **Broadcasts / multicasts only**
+```bash
+tcpdump -nn ether broadcast -i eth0
+tcpdump -nn ip multicast -i eth0
+```
+
+16. **Top 10 source IPs**
+```bash
+tcpdump -nn -i eth0 | awk '{print $3}' | cut -d. -f1-4 | sort | uniq -c | sort -nr | head -10
+```
+
+17. **Group packets by minute (requires `-tttt`)**
+```bash
+tcpdump -tttt -i eth0 | awk '{print $1}' | cut -d':' -f1-2 | sort | uniq -c
+```
+
+18. **Rank destinations hitting port 443**
+```bash
+tcpdump -nn port 443 -i eth0 | awk '{print $5}' | cut -d. -f1-4 | sort | uniq -c | sort -nr
+```
+
+19. **Rank sources for UDP traffic**
+```bash
+tcpdump -nn udp -i eth0 | awk '{print $3}' | cut -d. -f1-4 | sort | uniq -c | sort -nr
+```
+
+20. **Find top pairs to/from a key host**
+```bash
+tcpdump -nn host 10.0.0.5 -i eth0 | awk '{print $3,$5}' | cut -d. -f1-4,5-8 | sort | uniq -c | sort -nr | head
+```
+
+💡 **Pro tip:** Combine with capture filters (e.g., `port 443`, `icmp`, `net 10.0.0.0/8`) to organize only the traffic you care about.
+
 
 ## 🔹 TShark (CLI Wireshark)
 TShark is the **command-line interface to Wireshark**, ideal for automation, scripting, and environments without GUI access.
@@ -180,6 +312,21 @@ TShark is the **command-line interface to Wireshark**, ideal for automation, scr
   ```bash
   tshark -r capture.pcap -Y "http.request" -T fields -e http.host -e http.request.uri
   ```
+
+### 🗂 Organizing and Summarizing TShark Output
+
+TShark can directly extract fields from packets, making it easier to count and organize results without extra parsing.
+
+| Goal | Command | Description |
+|------|---------|-------------|
+| Top source IPs | `tshark -r capture.pcap -T fields -e ip.src | sort | uniq -c | sort -nr` | Lists and ranks most active sources |
+| Top destination IPs | `tshark -r capture.pcap -T fields -e ip.dst | sort | uniq -c | sort -nr` | Lists and ranks most active destinations |
+| Top TCP/UDP ports | `tshark -r capture.pcap -T fields -e tcp.dstport -e udp.dstport | sort | uniq -c | sort -nr` | See which services/ports are hit most |
+| Show conversations | `tshark -q -r capture.pcap -z conv,tcp` | Summarizes TCP conversations (similar to Wireshark "Conversations") |
+| Show protocol hierarchy | `tshark -q -r capture.pcap -z io,phs` | Displays protocol breakdown with percentages |
+
+💡 Pro tip: Use `-T fields -e <field>` to extract **any field Wireshark supports**, such as `dns.qry.name`, `http.host`, or `ssl.handshake.extensions_server_name`.
+
 - **Find top talkers:**
   ```bash
   tshark -r capture.pcap -T fields -e ip.src | sort | uniq -c | sort -nr
@@ -294,28 +441,3 @@ Wireshark is a **graphical packet analyzer** with deep inspection, stream reasse
 
 
 
-
-
----
-
-## 🔢 Common IP Protocol Numbers
-
-| Number | Protocol | Description |
-|--------|----------|-------------|
-| 1 | ICMP | Internet Control Message Protocol (ping, errors) |
-| 2 | IGMP | Internet Group Management Protocol (multicast) |
-| 6 | TCP | Transmission Control Protocol |
-| 17 | UDP | User Datagram Protocol |
-| 41 | IPv6 | IPv6 encapsulation |
-| 47 | GRE | Generic Routing Encapsulation |
-| 50 | ESP | IPsec Encapsulation Security Payload |
-| 51 | AH | IPsec Authentication Header |
-| 88 | EIGRP | Cisco EIGRP routing |
-| 89 | OSPF | Open Shortest Path First |
-| 132 | SCTP | Stream Control Transmission Protocol |
-
-💡 Use with `ip proto <num>` in tcpdump to filter directly, e.g.:  
-```bash
-tcpdump ip proto 47
-```
-(captures GRE traffic)
