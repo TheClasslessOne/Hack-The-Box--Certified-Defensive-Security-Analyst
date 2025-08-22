@@ -1,0 +1,326 @@
+<!--
+PROJECT: Road Trip — Name Cities by State (Full US Dataset)
+FILES INCLUDED IN THIS TEXT (copy each into your repo as separate files):
+
+1) index.html  – game UI (fetches cities.json at runtime)
+2) cities.json – generated dataset (created by build script)
+3) build_cities.mjs – Node.js script that builds cities.json from the U.S. Census API
+4) README.md – quick setup
+
+Copy/paste each section between the ==== FILE: <name> ==== delimiters into your files.
+-->
+
+==== FILE: index.html ====
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Road Trip: Name Cities by State</title>
+  <style>
+    :root {
+      --bg: #0e1b25; --card: #122636; --accent: #f7c948; --accent2: #58a6ff; --text: #e6edf3; --muted: #9fb3c8; --ok: #22c55e; --bad: #ef4444;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial; margin: 0; color: var(--text); background: linear-gradient(180deg,#0b1520,#0e1b25 40%,#0f1d2a); display:grid; place-items:center; padding:24px; }
+    .app { width: 100%; max-width: 980px; }
+    .headline { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+    .sign { background:#166534; border:6px solid #14532d; border-radius:14px; padding:10px 14px; font-weight:800; font-size:18px; text-transform:uppercase; letter-spacing:.08em; position:relative; box-shadow:0 10px 20px rgba(0,0,0,.25), inset 0 0 0 2px rgba(255,255,255,.06);} 
+    .sign::after{ content:"🛣️"; position:absolute; right:-44px; top:-10px; font-size:32px; transform:rotate(-10deg);} 
+    .card { background:var(--card); border:1px solid rgba(255,255,255,.06); border-radius:16px; padding:18px; box-shadow:0 10px 30px rgba(0,0,0,.25); }
+    .row { display:grid; grid-template-columns: 1fr; gap:12px; }
+    @media(min-width:720px){ .row{ grid-template-columns:1fr 1fr; }}
+    select,input,button{ width:100%; padding:12px 14px; border-radius:10px; border:1px solid rgba(255,255,255,.08); background:#0d2231; color:var(--text); font-size:16px; outline:none; }
+    select:focus,input:focus{ border-color:var(--accent2); box-shadow:0 0 0 3px rgba(88,166,255,.25);} 
+    .actions{ display:flex; gap:10px; }
+    .btn{ cursor:pointer; background:#1f6feb; border:none; font-weight:700; }
+    .btn.secondary{ background:#334155; }
+    .btn:disabled{ opacity:.6; cursor:not-allowed; }
+    .small{ font-size:12px; color:var(--muted); }
+    .feedback{ margin-top:8px; min-height:22px; font-weight:700; }
+    .ok{ color:var(--ok);} .bad{ color:var(--bad);} 
+    .chips{ display:flex; flex-wrap:wrap; gap:8px; padding-top:8px; max-height:160px; overflow:auto; }
+    .chip{ background:#0c1a26; border:1px dashed rgba(255,255,255,.12); padding:6px 10px; border-radius:999px; font-size:13px; color:var(--muted); }
+    .meta{ display:flex; flex-wrap:wrap; gap:10px; margin: 8px 0 0; color:var(--muted); font-size:14px; }
+    .progress{ margin-top:16px; position:relative; height:64px; background:linear-gradient(#111827,#0b1320); border-radius:16px; overflow:hidden; border:1px solid rgba(255,255,255,.08);} 
+    .lane{ position:absolute; left:0; right:0; top:50%; height:6px; background:#222f3d; transform:translateY(-50%);} 
+    .lane::before{ content:""; position:absolute; inset:0; background-image:repeating-linear-gradient(90deg,var(--accent) 0 28px,transparent 28px 56px); mask:linear-gradient(90deg,transparent 0,black 10%,black 90%,transparent 100%); opacity:.75; animation:dash 1.4s linear infinite; }
+    @keyframes dash { to{ transform:translateX(-56px);} }
+    .car{ position:absolute; top:50%; transform:translateY(-50%); transition:left .35s ease; font-size:28px; }
+    .footer{ color:var(--muted); font-size:13px; margin-top:14px; text-align:center; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="headline">
+      <div class="sign">Road Trip • City Challenge</div>
+      <h1 style="margin:0;font-size:22px;font-weight:800;letter-spacing:.02em">How many cities can you name in your state?</h1>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <label>
+          <div class="small">Choose a state</div>
+          <select id="stateSelect" aria-label="Choose a U.S. state"></select>
+        </label>
+        <label>
+          <div class="small">Enter a city (one at a time)</div>
+          <input id="cityInput" type="text" placeholder="e.g., Tallahassee" autocomplete="off" />
+        </label>
+      </div>
+      <div class="actions" style="margin-top:10px">
+        <button id="submitBtn" class="btn">Submit City</button>
+        <button id="giveUpBtn" class="btn secondary" title="Show remaining cities for this state">Reveal Remaining</button>
+        <button id="resetBtn" class="btn secondary" title="Reset current state">Reset State</button>
+      </div>
+      <div id="feedback" class="feedback" role="status" aria-live="polite"></div>
+
+      <div class="meta">
+        <div>Score: <strong id="score">0</strong></div>
+        <div>Found in state: <strong id="foundCount">0</strong>/<span id="totalCount">0</span></div>
+        <div>Streak: <strong id="streak">0</strong></div>
+        <div>Timer: <strong id="timer">00:00</strong></div>
+      </div>
+
+      <div class="progress" aria-hidden="true">
+        <div class="lane"></div>
+        <div id="car" class="car">🚗💨</div>
+      </div>
+
+      <div style="margin-top:10px">
+        <div class="small">Already found</div>
+        <div id="foundChips" class="chips" aria-live="polite"></div>
+      </div>
+
+      <details style="margin-top:10px">
+        <summary class="small">Dataset</summary>
+        <div class="small" style="margin-top:6px">
+          This version loads <code>cities.json</code> generated from the U.S. Census API (all incorporated places & CDPs). If you update the file, just redeploy.
+        </div>
+      </details>
+    </div>
+
+    <div class="footer">Theme: Road Trip • Plain HTML/CSS/JS • Works on GitHub Pages (remember to include <code>cities.json</code>).</div>
+  </div>
+
+<script>
+// Utilities
+const $ = (s)=>document.querySelector(s);
+const norm = (s)=> s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\./g,'').replace(/\s+/g,' ').trim().toLowerCase();
+
+// State
+let DATA = {}; // { stateName: [city1, city2, ...] }
+let STATES = [];
+let currentState = null; let found = new Set();
+let score = 0, streak = 0; let startTime = Date.now(); let timerId = null;
+
+// Elements
+const stateSelect = $('#stateSelect');
+const cityInput = $('#cityInput');
+const submitBtn = $('#submitBtn');
+const giveUpBtn = $('#giveUpBtn');
+const resetBtn = $('#resetBtn');
+const feedback = $('#feedback');
+const foundChips = $('#foundChips');
+const scoreEl = $('#score');
+const foundCountEl = $('#foundCount');
+const totalCountEl = $('#totalCount');
+const streakEl = $('#streak');
+const car = $('#car');
+
+async function loadData(){
+  try{
+    const res = await fetch('cities.json', { cache:'no-store' });
+    if(!res.ok) throw new Error('cities.json not found');
+    DATA = await res.json();
+    STATES = Object.keys(DATA).sort((a,b)=>a.localeCompare(b));
+    populateStates();
+    startTimer();
+  }catch(err){
+    console.error(err);
+    feedback.innerHTML = '<span class="bad">⚠️ Could not load <b>cities.json</b>. Make sure it exists at the site root.</span>';
+    submitBtn.disabled = true; giveUpBtn.disabled = true; resetBtn.disabled = true; stateSelect.disabled = true; cityInput.disabled = true;
+  }
+}
+
+function populateStates(){
+  stateSelect.innerHTML = STATES.map(s=>`<option value="${s}">${s}</option>`).join('');
+  const defaultState = 'Florida';
+  stateSelect.value = STATES.includes(defaultState) ? defaultState : STATES[0];
+  onChangeState();
+}
+
+function onChangeState(){
+  currentState = stateSelect.value; found = new Set(); streak=0; streakEl.textContent=streak; cityInput.value='';
+  updateCounts(); renderFound(); feedback.textContent=''; moveCar(); cityInput.focus();
+}
+
+function updateCounts(){
+  foundCountEl.textContent = found.size;
+  totalCountEl.textContent = DATA[currentState]?.length || 0;
+}
+
+function renderFound(){
+  const chips = [...found].sort((a,b)=>a.localeCompare(b)).map(name=>`<span class="chip" title="${name}">${name}</span>`).join('');
+  foundChips.innerHTML = chips || '<span class="small">None yet — start typing!</span>';
+}
+
+function moveCar(){
+  const total = DATA[currentState]?.length || 0; const pct = total? (found.size/total):0; const left = Math.max(12, Math.min(92, 6 + pct*88));
+  car.style.left = left + '%';
+}
+
+function tickTimer(){ const ms=Date.now()-startTime; const s=Math.floor(ms/1000); const m=Math.floor(s/60); const ss=String(s%60).padStart(2,'0'); $('#timer').textContent=`${String(m).padStart(2,'0')}:${ss}`; }
+function startTimer(){ if(timerId) clearInterval(timerId); startTime=Date.now(); timerId=setInterval(tickTimer,1000); tickTimer(); }
+
+function submitCity(){
+  const raw = cityInput.value; const key = norm(raw);
+  if(!key) return;
+  const pool = (DATA[currentState]||[]);
+  // index by normalized name once (cache)
+  if(!submitCity._cache || submitCity._cache_state !== currentState){
+    submitCity._cache = new Map(pool.map(c=>[norm(c), c]));
+    submitCity._cache_state = currentState;
+  }
+  const canonical = submitCity._cache.get(key);
+  if(!canonical){
+    feedback.innerHTML = `<span class="bad">❌ Not found in <b>${currentState}</b>. Try another city!</span>`; streak=0; streakEl.textContent=streak; cityInput.select(); return;
+  }
+  if(found.has(canonical)){
+    feedback.innerHTML = `<span class="bad">⚠️ Already counted <b>${canonical}</b>.</span>`; cityInput.select(); return;
+  }
+  found.add(canonical); score+=1; scoreEl.textContent=score; streak+=1; streakEl.textContent=streak; feedback.innerHTML = `<span class="ok">✅ Nice! Added <b>${canonical}</b>.</span>`; cityInput.value=''; updateCounts(); renderFound(); moveCar();
+  if(found.size === pool.length){ feedback.innerHTML = `<span class="ok">🏁 You finished <b>${currentState}</b>! Change states to keep the road trip going.</span>`; }
+}
+
+function revealRemaining(){
+  const pool = new Set(DATA[currentState]||[]); const remaining=[...pool].filter(c=>!found.has(c));
+  feedback.innerHTML = remaining.length? `🗺️ Remaining in <b>${currentState}</b>: ${remaining.join(', ')}` : `🎉 No cities remaining for ${currentState}!`;
+  cityInput.focus();
+}
+
+function resetState(){ found.clear(); updateCounts(); renderFound(); feedback.textContent=''; streak=0; streakEl.textContent=streak; cityInput.value=''; moveCar(); cityInput.focus(); }
+
+stateSelect.addEventListener('change', onChangeState);
+submitBtn.addEventListener('click', submitCity);
+giveUpBtn.addEventListener('click', revealRemaining);
+resetBtn.addEventListener('click', resetState);
+cityInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') submitCity(); });
+
+loadData();
+</script>
+</body>
+</html>
+
+==== FILE: build_cities.mjs ====
+// Build script: generates cities.json with ALL places for every U.S. state (incl. DC)
+// Source: U.S. Census API (PEP). Includes incorporated places and CDPs.
+// Usage: node build_cities.mjs
+// Output: writes ./cities.json (mapping: { State Name: ["City", ...] })
+
+import fs from 'node:fs/promises';
+
+const STATES = [
+  ['01','Alabama'], ['02','Alaska'], ['04','Arizona'], ['05','Arkansas'], ['06','California'],
+  ['08','Colorado'], ['09','Connecticut'], ['10','Delaware'], ['11','District of Columbia'],
+  ['12','Florida'], ['13','Georgia'], ['15','Hawaii'], ['16','Idaho'], ['17','Illinois'],
+  ['18','Indiana'], ['19','Iowa'], ['20','Kansas'], ['21','Kentucky'], ['22','Louisiana'],
+  ['23','Maine'], ['24','Maryland'], ['25','Massachusetts'], ['26','Michigan'], ['27','Minnesota'],
+  ['28','Mississippi'], ['29','Missouri'], ['30','Montana'], ['31','Nebraska'], ['32','Nevada'],
+  ['33','New Hampshire'], ['34','New Jersey'], ['35','New Mexico'], ['36','New York'],
+  ['37','North Carolina'], ['38','North Dakota'], ['39','Ohio'], ['40','Oklahoma'], ['41','Oregon'],
+  ['42','Pennsylvania'], ['44','Rhode Island'], ['45','South Carolina'], ['46','South Dakota'],
+  ['47','Tennessee'], ['48','Texas'], ['49','Utah'], ['50','Vermont'], ['51','Virginia'],
+  ['53','Washington'], ['54','West Virginia'], ['55','Wisconsin'], ['56','Wyoming']
+];
+
+const API_YEAR = '2023';
+const API = (stateFips)=>`https://api.census.gov/data/${API_YEAR}/pep/population?get=NAME&for=place:*&in=state:${stateFips}`;
+
+const sleep = (ms)=> new Promise(r=>setTimeout(r, ms));
+
+function cleanPlaceName(name){
+  // NAME comes like "Springfield city, Illinois" or "Some CDP, Alaska". We want just the place name.
+  // Slice before the last comma.
+  const idx = name.lastIndexOf(',');
+  const place = idx>0 ? name.slice(0, idx) : name;
+  // Remove trailing descriptors like "city", "town", "village", "CDP", "municipality", etc. Keep official spellings like "St. Louis".
+  return place.replace(/\s+(city|town|village|borough|municipality|CDP|urban county|consolidated government|metro government)\b/gi,'').trim();
+}
+
+async function fetchState(state){
+  const [fips, stateName] = state;
+  const url = API(fips);
+  const res = await fetch(url);
+  if(!res.ok) throw new Error(`${stateName}: HTTP ${res.status}`);
+  const rows = await res.json();
+  // rows[0] is header: [ 'NAME', 'state', 'place' ]
+  const out = new Set();
+  for (const row of rows.slice(1)){
+    const rawName = row[0];
+    const cleaned = cleanPlaceName(rawName);
+    if(cleaned) out.add(cleaned);
+  }
+  // Sort by locale, case-insensitive
+  return [stateName, Array.from(out).sort((a,b)=>a.localeCompare(b))];
+}
+
+async function main(){
+  const result = {};
+  for (const s of STATES){
+    let tries = 0;
+    while(true){
+      try{
+        const [stateName, places] = await fetchState(s);
+        result[stateName] = places;
+        console.log(`${stateName}: ${places.length} places`);
+        break;
+      }catch(e){
+        tries++; console.warn(`Retry ${tries} for ${s[1]}... (${e.message})`);
+        if(tries>3) throw e; await sleep(800 * tries);
+      }
+    }
+  }
+  await fs.writeFile('cities.json', JSON.stringify(result, null, 2));
+  console.log('✔ Wrote cities.json');
+}
+
+main().catch(err=>{ console.error(err); process.exit(1); });
+
+==== FILE: cities.json ====
+{
+  "_comment": "This file is generated by build_cities.mjs. Run `node build_cities.mjs` to replace this placeholder with the full dataset.",
+  "Florida": ["Jacksonville","Miami","Tampa","Orlando"],
+  "Virginia": ["Virginia Beach","Norfolk","Chesapeake","Richmond","Arlington"],
+  "District of Columbia": ["Washington"]
+}
+
+==== FILE: README.md ====
+# Road Trip — Name Cities by State (Full Dataset)
+
+A tiny web game: pick a state, type cities one-by-one, and see how many you can name. The **full set of cities** (all incorporated places + CDPs) is pulled from the **U.S. Census API** and bundled into `cities.json`.
+
+## Quick Start (GitHub Pages)
+1. Create a repo and add these files: `index.html`, `build_cities.mjs`, and `cities.json` (placeholder).
+2. Run the build script locally to generate the full dataset:
+   ```bash
+   node -v   # Node 18+ recommended
+   node build_cities.mjs
+   ```
+   This writes a complete `cities.json` next to `index.html`.
+3. Commit and push. Enable GitHub Pages (Deploy from branch / root).
+4. Visit your Pages URL and play!
+
+## Notes
+- The dataset includes **incorporated places and CDPs**; the Census treats both as “places.” If you want *only incorporated cities*, filter in the build script by suffix (e.g., keeping entries that originally contain `city`, `town`, `village`, `borough`, `municipality`).
+- Name matching is **case- and accent-insensitive** (e.g., `São José` → `sao jose`).
+- To support alternative spellings/aliases, you can extend the matching cache in `index.html`.
+
+## Customize
+- Default state is set to Florida; change in `index.html` (`defaultState`).
+- Add a timer limit, lives, or leaderboards easily—everything’s client-side.
+- Want territories (PR, GU, etc.)? Add their FIPS codes to `STATES` in the build script.
+
+## License
+MIT — have fun road-tripping! 🚗💨
