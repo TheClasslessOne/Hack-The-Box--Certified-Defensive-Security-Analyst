@@ -1,58 +1,81 @@
 # 🛡️ Network Traffic Analysis Cheat Sheet
 
+
 ⚠️ Unless you are running as root, `sudo` privileges are required for packet capture tools since they must set interfaces into **promiscuous mode** or bind to them.
 
----
-
-## 🔹 Nomachine Connection Information
-For HTB Academy labs or similar training environments.
-- **Target IP:** 10.129.43.4  
-- **Username:** htb-student  
-- **Password:** HTB_@cademy_stdnt!
-
----
 
 ## 🔹 Tcpdump (CLI Packet Capture)
 Tcpdump is lightweight and fast — perfect for quick captures, filtering, and creating `.pcap` files for deeper analysis in Wireshark.
 
-### 🔧 Common Switches
-| Switch | Description | Example |
-|--------|-------------|---------|
-| `-D` | List available interfaces | `tcpdump -D` |
-| `-i` | Select interface | `tcpdump -i eth0` |
-| `-n` | Don’t resolve hostnames | `tcpdump -n` |
-| `-nn` | Don’t resolve hostnames/ports | `tcpdump -nn` |
-| `-e` | Include Ethernet header | `tcpdump -e -i eth0` |
-| `-X` | Show packets in hex + ASCII | `tcpdump -X -i eth0` |
-| `-XX` | Hex + ASCII + Ethernet header | `tcpdump -XX -i eth0` |
-| `-v/-vv/-vvv` | Increase verbosity | `tcpdump -vv -i eth0` |
-| `-c <#>` | Capture X packets then exit | `tcpdump -c 50 -i eth0` |
-| `-s <#>` | Set snapshot length (bytes) | `tcpdump -s 0 -i eth0` (0 = full packet) |
-| `-S` | Show absolute TCP sequence numbers | `tcpdump -S -i eth0` |
-| `-q` | Print less protocol info | `tcpdump -q -i eth0` |
-| `-w <file>` | Write to file | `tcpdump -w test.pcap -i eth0` |
-| `-r <file>` | Read from file | `tcpdump -r test.pcap` |
 
-### 🔍 Filters
+### 🔧 Command Line Options
+| Option | Description | Example |
+|--------|-------------|---------|
+| `-A` | Print frame payload in ASCII | `tcpdump -A -i eth0` |
+| `-c <count>` | Exit after capturing count packets | `tcpdump -c 50 -i eth0` |
+| `-D` | List available interfaces | `tcpdump -D` |
+| `-e` | Print link-level headers | `tcpdump -e -i eth0` |
+| `-F <file>` | Use file as filter expression | `tcpdump -F filter.txt` |
+| `-G <n>` | Rotate dump file every n seconds | `tcpdump -G 60 -w capture-%Y-%m-%d_%H-%M-%S.pcap` |
+| `-i <iface>` | Capture on interface | `tcpdump -i eth0` |
+| `-K` | Don’t verify TCP checksums | `tcpdump -K -i eth0` |
+| `-L` | List data link types for the interface | `tcpdump -i eth0 -L` |
+| `-n` | Don’t resolve hostnames | `tcpdump -n -i eth0` |
+| `-nn` | Don’t resolve hostnames or ports | `tcpdump -nn -i eth0` |
+| `-p` | Don’t capture in promiscuous mode | `tcpdump -p -i eth0` |
+| `-q` | Quick output (less detail) | `tcpdump -q -i eth0` |
+| `-r <file>` | Read from file | `tcpdump -r test.pcap` |
+| `-s <len>` | Capture up to len bytes | `tcpdump -s 0 -i eth0` |
+| `-S` | Show absolute TCP sequence numbers | `tcpdump -S -i eth0` |
+| `-t` | Don’t print timestamps | `tcpdump -t -i eth0` |
+| `-v, -vv, -vvv` | Increase verbosity | `tcpdump -vvv -i eth0` |
+| `-w <file>` | Write packets to file | `tcpdump -w out.pcap -i eth0` |
+| `-x` | Print payload in hex | `tcpdump -x -i eth0` |
+| `-X` | Print payload in hex + ASCII | `tcpdump -X -i eth0` |
+| `-y <type>` | Specify data link type | `tcpdump -y EN10MB -i eth0` |
+| `-Z <user>` | Drop privileges to user | `tcpdump -Z nobody -i eth0` |
+
+
+### 🔍 Capture Filter Primitives
 | Filter | Description | Example |
 |--------|-------------|---------|
-| `host <ip>` | Filter by host IP | `tcpdump host 10.10.10.5` |
-| `src host <ip>` | Filter by source IP | `tcpdump src host 192.168.1.10` |
-| `dst host <ip>` | Filter by destination IP | `tcpdump dst host 192.168.1.10` |
-| `port <#>` | Filter by port | `tcpdump port 80` |
-| `src port <#>` | Filter by source port | `tcpdump src port 22` |
-| `dst port <#>` | Filter by destination port | `tcpdump dst port 53` |
-| `net <subnet>` | Filter by network | `tcpdump net 192.168.1.0/24` |
-| `tcp / udp / icmp` | Protocol-based filter | `tcpdump icmp` |
-| `portrange X-Y` | Filter port range | `tcpdump portrange 20-25` |
-| `and` | Logical AND | `tcpdump host 10.10.10.5 and port 22` |
-| `or` | Logical OR | `tcpdump port 80 or port 443` |
-| `not` | Negation | `tcpdump not port 22` |
+| `[src|dst] host <host>` | Match source/destination host | `tcpdump src host 10.0.0.1` |
+| `ether [src|dst] host <ehost>` | Match Ethernet host | `tcpdump ether src host 00:11:22:33:44:55` |
+| `gateway host <host>` | Match packets using host as gateway | `tcpdump gateway host 192.168.1.1` |
+| `[src|dst] net <network>/<len>` | Match subnet | `tcpdump net 192.168.1.0/24` |
+| `[tcp|udp] [src|dst] port <port>` | Match TCP/UDP port | `tcpdump tcp dst port 80` |
+| `[tcp|udp] portrange <p1>-<p2>` | Match TCP/UDP port range | `tcpdump udp portrange 5000-6000` |
+| `less <length>` | Packets ≤ length | `tcpdump less 64` |
+| `greater <length>` | Packets ≥ length | `tcpdump greater 1500` |
+| `(ether|ip|ip6) proto <protocol>` | Match protocol | `tcpdump ip proto 6` |
+| `(ether|ip) broadcast` | Match broadcasts | `tcpdump ether broadcast` |
+| `(ether|ip|ip6) multicast` | Match multicasts | `tcpdump ip multicast` |
+| `type (mgt|ctl|data)` | Match 802.11 frame type | `tcpdump type ctl` |
+| `vlan [<id>]` | Match VLAN traffic | `tcpdump vlan 100` |
+| `mpls [<label>]` | Match MPLS | `tcpdump mpls 200` |
 
-### 💡 Use Cases
-- **Detect beaconing malware:** `tcpdump -i eth0 dst port 80 or 443`  
-- **Sniff credentials (lab use only):** `tcpdump -A -i eth0 port 21 or port 23`  
-- **Detect tunneling:** `tcpdump -i eth0 icmp`  
+
+### 🔗 Protocols
+- `arp, ether, fddi, icmp, ip, ip6, link, ppp, radio, rarp, slip, tcp, tr, udp, wlan`
+
+
+### 🚩 TCP Flags
+- `tcp-urg, tcp-ack, tcp-psh, tcp-rst, tcp-syn, tcp-fin`
+
+
+### 🌐 ICMP Types
+- `icmp-echoreply, icmp-unreach, icmp-sourcequench, icmp-redirect, icmp-echo, icmp-routeradvert, icmp-routersolicit, icmp-timxceed, icmp-paramprob, icmp-tstamp, icmp-tstampreply, icmp-ireq, icmp-ireqreply, icmp-maskreq, icmp-maskreply`
+
+
+### ➕ Modifiers
+- `! or not` → Negation
+- `&& or and` → Logical AND
+- `|| or or` → Logical OR
+
+
+### 💡 Example Filters
+| Example | Description |
+- **Detect SYN flood:** `tcpdump -nni eth0 'tcp[tcpflags] & tcp-syn != 0'`
 
 ---
 
@@ -192,3 +215,4 @@ Wireshark is a **graphical packet analyzer** with deep inspection, stream reasse
 ---
 
 👉 This upgraded sheet keeps **all original content**, but adds **switches, filters, examples, and workflows** — organized so you can move seamlessly from **capture → filter → analyze**.
+
