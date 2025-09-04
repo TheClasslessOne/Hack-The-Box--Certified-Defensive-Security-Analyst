@@ -1,11 +1,3 @@
-# 🔌 Quick Target Setup
-Set your target IP once at the top, then reuse `$IP` everywhere.
-
-```bash
-10.129.242.213
-```
-
-
 # 📑 Table of Contents
 
 - [🕵️ Network Enumeration with Nmap — Detailed Cheat Sheet](#-network-enumeration-with-nmap--detailed-cheat-sheet)
@@ -33,20 +25,20 @@ Set your target IP once at the top, then reuse `$IP` everywhere.
 ## 🎯 Target Specification
 | Option | Description | Example |
 |--------|-------------|---------|
-| `$IP/24` | Scan entire subnet (CIDR notation). | `nmap $IP/24` |
+| `10.10.10.0/24` | Scan entire subnet (CIDR notation). | `nmap 10.10.10.0/24` |
 | `-iL hosts.txt` | Read list of targets from file. | `nmap -iL hosts.txt` |
 | `-iR 100` | Choose 100 random targets. | `nmap -iR 100` |
-| `--exclude $IP` | Skip a host. | `nmap $IP/24 --exclude $IP` |
-| `--exclude-file exclude.txt` | Exclude list of hosts from file. | `nmap --exclude-file exclude.txt $IP/24` |
+| `--exclude 10.10.10.5` | Skip a host. | `nmap 10.10.10.0/24 --exclude 10.10.10.5` |
+| `--exclude-file exclude.txt` | Exclude list of hosts from file. | `nmap --exclude-file exclude.txt 10.10.10.0/24` |
 
 ---
 
 ## 🔍 Host Discovery
 | Option | Description | Example |
 |--------|-------------|---------|
-| `-sn` | Ping scan only (no port scan). | `nmap -sn $IP/24` |
+| `-sn` | Ping scan only (no port scan). | `nmap -sn 10.10.10.0/24` |
 | `-Pn` | Treat all hosts as online (skip ping). Useful when ICMP is blocked. | `nmap -Pn target.com` |
-| `-n` | Disable DNS resolution (faster). | `nmap -n $IP/24` |
+| `-n` | Disable DNS resolution (faster). | `nmap -n 10.10.10.0/24` |
 | `-PE` | ICMP Echo request ping. | `nmap -PE target.com` |
 | `-PP` | ICMP Timestamp ping. | `nmap -PP target.com` |
 | `-PM` | ICMP Netmask request ping. | `nmap -PM target.com` |
@@ -59,8 +51,8 @@ Set your target IP once at the top, then reuse `$IP` everywhere.
 ## 🚪 Port Scanning
 | Option | Description | Example |
 |--------|-------------|---------|
-| `-p-` | Scan all 65,535 TCP ports. | `nmap -p- $IP` |
-| `-p22-110` | Scan port range. | `nmap -p22-110 $IP` |
+| `-p-` | Scan all 65,535 TCP ports. | `nmap -p- 10.10.10.10` |
+| `-p22-110` | Scan port range. | `nmap -p22-110 10.10.10.10` |
 | `-p22,25,80` | Specific ports only. | `nmap -p22,25,80 target.com` |
 | `-F` | Fast scan (top 100 ports). | `nmap -F target.com` |
 | `--top-ports=200` | Scan top 200 most common ports. | `nmap --top-ports=200 target.com` |
@@ -139,27 +131,27 @@ Set your target IP once at the top, then reuse `$IP` everywhere.
 
 **1. Fast discovery of live hosts**  
 ```bash
-nmap -sn $IP/24 -oG hosts.gnmap
+nmap -sn 10.10.10.0/24 -oG hosts.gnmap
 ```
 
 **2. Full TCP + service/version scan**  
 ```bash
-nmap -sS -sV -p- $IP -oA fullscan
+nmap -sS -sV -p- 10.10.10.10 -oA fullscan
 ```
 
 **3. OS fingerprint + default scripts**  
 ```bash
-nmap -A $IP
+nmap -A 10.10.10.10
 ```
 
 **4. UDP discovery of common services**  
 ```bash
-nmap -sU --top-ports 50 $IP
+nmap -sU --top-ports 50 10.10.10.10
 ```
 
 **5. Evade firewall with decoys and spoofed source**  
 ```bash
-nmap -sS -D RND:10 -g 53 $IP
+nmap -sS -D RND:10 -g 53 10.10.10.10
 ```
 
 **6. Banner grabbing with version detection**  
@@ -196,55 +188,55 @@ It includes ready-to-paste commands for fast use.
 ## 🔎 General Enumeration
 | Script | Purpose | Example |
 |--------|---------|---------|
-| `default` | Runs all “safe” scripts. | `nmap -sC $IP` |
-| `banner` | Grabs service banners. | `nmap --script banner -p80,22 $IP` |
-| `http-title` | Gets webpage title. | `nmap --script http-title -p80 $IP` |
-| `http-headers` | Dumps HTTP headers. | `nmap --script http-headers -p80 $IP` |
-| `http-methods` | Checks allowed HTTP methods (GET, POST, PUT, etc.). | `nmap --script http-methods -p80 $IP` |
+| `default` | Runs all “safe” scripts. | `nmap -sC 10.10.10.10` |
+| `banner` | Grabs service banners. | `nmap --script banner -p80,22 10.10.10.10` |
+| `http-title` | Gets webpage title. | `nmap --script http-title -p80 10.10.10.10` |
+| `http-headers` | Dumps HTTP headers. | `nmap --script http-headers -p80 10.10.10.10` |
+| `http-methods` | Checks allowed HTTP methods (GET, POST, PUT, etc.). | `nmap --script http-methods -p80 10.10.10.10` |
 
 ## 🔑 Authentication & Login
 | Script | Purpose | Example |
 |--------|---------|---------|
-| `ftp-anon` | Check if FTP allows anonymous login. | `nmap --script ftp-anon -p21 $IP` |
-| `ssh-auth-methods` | List supported SSH auth methods. | `nmap --script ssh-auth-methods -p22 $IP` |
-| `smb-enum-users` | Enumerate SMB users. | `nmap --script smb-enum-users -p445 $IP` |
-| `mysql-brute` | Attempt MySQL brute-force. | `nmap --script mysql-brute -p3306 $IP` |
+| `ftp-anon` | Check if FTP allows anonymous login. | `nmap --script ftp-anon -p21 10.10.10.10` |
+| `ssh-auth-methods` | List supported SSH auth methods. | `nmap --script ssh-auth-methods -p22 10.10.10.10` |
+| `smb-enum-users` | Enumerate SMB users. | `nmap --script smb-enum-users -p445 10.10.10.10` |
+| `mysql-brute` | Attempt MySQL brute-force. | `nmap --script mysql-brute -p3306 10.10.10.10` |
 
 ## 🌐 Web / HTTP
 | Script | Purpose | Example |
 |--------|---------|---------|
-| `http-enum` | Enumerates common web files/directories. | `nmap --script http-enum -p80 $IP` |
-| `http-vhosts` | Detects virtual hosts. | `nmap --script http-vhosts -p80 $IP` |
-| `http-robots.txt` | Fetches robots.txt. | `nmap --script http-robots.txt -p80 $IP` |
-| `http-config-backup` | Finds backup config files. | `nmap --script http-config-backup -p80 $IP` |
-| `http-phpmyadmin-dir-traversal` | Checks phpMyAdmin traversal vuln. | `nmap --script http-phpmyadmin-dir-traversal -p80 $IP` |
+| `http-enum` | Enumerates common web files/directories. | `nmap --script http-enum -p80 10.10.10.10` |
+| `http-vhosts` | Detects virtual hosts. | `nmap --script http-vhosts -p80 10.10.10.10` |
+| `http-robots.txt` | Fetches robots.txt. | `nmap --script http-robots.txt -p80 10.10.10.10` |
+| `http-config-backup` | Finds backup config files. | `nmap --script http-config-backup -p80 10.10.10.10` |
+| `http-phpmyadmin-dir-traversal` | Checks phpMyAdmin traversal vuln. | `nmap --script http-phpmyadmin-dir-traversal -p80 10.10.10.10` |
 
 ## 📂 SMB / Windows
 | Script | Purpose | Example |
 |--------|---------|---------|
-| `smb-os-discovery` | Detect Windows version/domain. | `nmap --script smb-os-discovery -p445 $IP` |
-| `smb-enum-shares` | List SMB shares. | `nmap --script smb-enum-shares -p445 $IP` |
-| `smb-enum-users` | Enumerate users. | `nmap --script smb-enum-users -p445 $IP` |
-| `smb-vuln-ms17-010` | Test for EternalBlue vuln. | `nmap --script smb-vuln-ms17-010 -p445 $IP` |
-| `smb-vuln*` | Run all SMB vuln checks. | `nmap --script smb-vuln* -p445 $IP` |
+| `smb-os-discovery` | Detect Windows version/domain. | `nmap --script smb-os-discovery -p445 10.10.10.10` |
+| `smb-enum-shares` | List SMB shares. | `nmap --script smb-enum-shares -p445 10.10.10.10` |
+| `smb-enum-users` | Enumerate users. | `nmap --script smb-enum-users -p445 10.10.10.10` |
+| `smb-vuln-ms17-010` | Test for EternalBlue vuln. | `nmap --script smb-vuln-ms17-010 -p445 10.10.10.10` |
+| `smb-vuln*` | Run all SMB vuln checks. | `nmap --script smb-vuln* -p445 10.10.10.10` |
 
 ## 📡 Other Services
 | Script | Purpose | Example |
 |--------|---------|---------|
 | `dns-brute` | Enumerate subdomains. | `nmap --script dns-brute target.com` |
-| `rdp-enum-encryption` | Checks RDP encryption methods. | `nmap --script rdp-enum-encryption -p3389 $IP` |
-| `rdp-vuln-ms12-020` | Check RDP DoS vuln. | `nmap --script rdp-vuln-ms12-020 -p3389 $IP` |
-| `mysql-info` | Collect MySQL server info. | `nmap --script mysql-info -p3306 $IP` |
-| `snmp-info` | SNMP sysDescr, sysName, etc. | `nmap --script snmp-info -p161 $IP` |
+| `rdp-enum-encryption` | Checks RDP encryption methods. | `nmap --script rdp-enum-encryption -p3389 10.10.10.10` |
+| `rdp-vuln-ms12-020` | Check RDP DoS vuln. | `nmap --script rdp-vuln-ms12-020 -p3389 10.10.10.10` |
+| `mysql-info` | Collect MySQL server info. | `nmap --script mysql-info -p3306 10.10.10.10` |
+| `snmp-info` | SNMP sysDescr, sysName, etc. | `nmap --script snmp-info -p161 10.10.10.10` |
 
 ## 💣 Vulnerability Scanning
 | Script | Purpose | Example |
 |--------|---------|---------|
-| `vuln` | Run all vulnerability scripts. | `nmap --script vuln $IP` |
-| `http-vuln-cve2006-3392` | Check WebDAV exploit. | `nmap --script http-vuln-cve2006-3392 -p80 $IP` |
-| `ftp-vsftpd-backdoor` | Detects vsftpd backdoor (2.3.4). | `nmap --script ftp-vsftpd-backdoor -p21 $IP` |
-| `ssl-heartbleed` | Checks for Heartbleed vuln. | `nmap --script ssl-heartbleed -p443 $IP` |
-| `http-sql-injection` | Test for basic SQLi. | `nmap --script http-sql-injection -p80 $IP` |
+| `vuln` | Run all vulnerability scripts. | `nmap --script vuln 10.10.10.10` |
+| `http-vuln-cve2006-3392` | Check WebDAV exploit. | `nmap --script http-vuln-cve2006-3392 -p80 10.10.10.10` |
+| `ftp-vsftpd-backdoor` | Detects vsftpd backdoor (2.3.4). | `nmap --script ftp-vsftpd-backdoor -p21 10.10.10.10` |
+| `ssl-heartbleed` | Checks for Heartbleed vuln. | `nmap --script ssl-heartbleed -p443 10.10.10.10` |
+| `http-sql-injection` | Test for basic SQLi. | `nmap --script http-sql-injection -p80 10.10.10.10` |
 
 
 ---
