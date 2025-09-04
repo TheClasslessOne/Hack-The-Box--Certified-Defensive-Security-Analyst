@@ -2,7 +2,7 @@
 Set your target IP once at the top, then reuse `$IP` everywhere.
 
 ```bash
-IP=$IP
+10.129.242.213
 ```
 
 
