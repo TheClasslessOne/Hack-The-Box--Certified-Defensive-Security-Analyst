@@ -1,4 +1,4 @@
-# 📝 tmux Cheat Sheet
+# 📝 tmux Cheat Sheet (Corrected with [Shift] Notes)
 
 ## 🔹 Start & Exit
 ```bash
@@ -14,7 +14,7 @@ tmux detach            # detach (Ctrl+b d)
 
 ## 🔹 Sessions
 - `Ctrl+b s` → list sessions  
-- `Ctrl+b $` → rename current session  
+- `Ctrl+b [Shift]+4` → rename current session (`$`)  
 - `unset TMUX; tmux attach -t name` → avoid nesting  
 
 ---
@@ -30,8 +30,8 @@ tmux detach            # detach (Ctrl+b d)
 ---
 
 ## 🔹 Panes (splits)
-- `Ctrl+b %` → vertical split  
-- `Ctrl+b "` → horizontal split  
+- `Ctrl+b [Shift]+5` → vertical split (`%`)  
+- `Ctrl+b [Shift]+'` → horizontal split (`"`)  
 - `Ctrl+b x` → kill pane  
 - `Ctrl+b o` → switch pane  
 - `Ctrl+b ;` → last pane  
@@ -41,11 +41,12 @@ tmux detach            # detach (Ctrl+b d)
 ---
 
 ## 🔹 Resizing Panes
+Enter command mode first with `Ctrl+b [Shift]+;` (colon `:`), then:
 ```bash
-Ctrl+b :resize-pane -U 5   # resize up
-Ctrl+b :resize-pane -D 5   # resize down
-Ctrl+b :resize-pane -L 5   # resize left
-Ctrl+b :resize-pane -R 5   # resize right
+resize-pane -U 5   # resize up
+resize-pane -D 5   # resize down
+resize-pane -L 5   # resize left
+resize-pane -R 5   # resize right
 ```
 
 ---
@@ -60,8 +61,8 @@ Ctrl+b :resize-pane -R 5   # resize right
 
 ## 🔹 Misc
 - `Ctrl+b t` → show clock  
-- `Ctrl+b ?` → show all keybindings  
-- `Ctrl+b :` → enter command mode  
+- `Ctrl+b [Shift]+/` → show all keybindings (`?`)  
+- `Ctrl+b [Shift]+;` → enter command mode (`:`)  
 
 ---
 
@@ -101,8 +102,8 @@ Ctrl+b ,   # then type new name
   - Left pane: `nmap`
   - Right pane: open notes (`vim`) to jot ports  
   ```bash
-  Ctrl+b %   # vertical split
-  Ctrl+b "   # horizontal split
+  Ctrl+b [Shift]+5   # vertical split (%)
+  Ctrl+b [Shift]+'   # horizontal split (")
   ```
 
 - Web window (`www`):
